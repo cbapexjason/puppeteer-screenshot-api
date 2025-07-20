@@ -11,7 +11,7 @@ app.use(bodyParser.json({ limit: '2mb' })); // accept HTML/CSS
 
 app.post('/screenshot', authenticateRequest, async (req, res) => {
 
-  const { html, viewport } = req.body;
+  const { html, viewport, css } = req.body;
 
   if (!html) {
     return res.status(400).json({ error: 'Missing HTML' });
@@ -31,7 +31,16 @@ app.post('/screenshot', authenticateRequest, async (req, res) => {
       await page.setViewport(viewport);
     }
 
-    await page.setContent(html, { waitUntil: 'networkidle0' });
+   await page.setContent(`
+  <html>
+    <head>
+      ${css ? `<style>${css}</style>` : ''}
+    </head>
+    <body>
+      ${html}
+    </body>
+  </html>
+`, { waitUntil: 'networkidle0' });
 
     const screenshot = await page.screenshot({ type: 'png' });
 
