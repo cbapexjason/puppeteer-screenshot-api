@@ -2,12 +2,15 @@ const express = require('express');
 const puppeteer = require('puppeteer');
 const bodyParser = require('body-parser');
 
+const API_SECRET = process.env.API_SECRET || 'super-secret-api-key';
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(bodyParser.json({ limit: '2mb' })); // accept HTML/CSS
 
-app.post('/screenshot', async (req, res) => {
+app.post('/screenshot', authenticateRequest, async (req, res) => {
+
   const { html, viewport } = req.body;
 
   if (!html) {
@@ -55,3 +58,19 @@ app.get('/', (req, res) => {
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
+
+function authenticateRequest(req, res, next) {
+  const authHeader = req.headers['authorization'];
+
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ error: 'Unauthorized: Missing bearer token' });
+  }
+
+  const token = authHeader.split(' ')[1];
+
+  if (token !== API_SECRET) {
+    return res.status(403).json({ error: 'Forbidden: Invalid API token' });
+  }
+
+  next();
+}
