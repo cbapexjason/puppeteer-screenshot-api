@@ -2,7 +2,7 @@ const express = require('express');
 const puppeteer = require('puppeteer');
 const bodyParser = require('body-parser');
 
-const API_SECRET = process.env.API_SECRET || 'super-secret-api-key';
+const API_SECRET = process.env.API_SECRET || 'test-secret';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
