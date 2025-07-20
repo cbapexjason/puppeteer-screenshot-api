@@ -11,32 +11,40 @@ app.post('/screenshot', async (req, res) => {
   const { html, viewport } = req.body;
 
   if (!html) {
-    return res.status(400).json({ error: 'Missing HTML payload' });
+    return res.status(400).json({ error: 'Missing HTML' });
   }
 
-  const browser = await puppeteer.launch({
-    headless: 'new',
-    args: ['--no-sandbox', '--disable-setuid-sandbox']
-  });
+  let browser;
 
   try {
-    const page = await browser.newPage();
+    browser = await puppeteer.launch({
+      headless: 'new', // could try true if still failing
+      args: ['--no-sandbox', '--disable-setuid-sandbox']
+    });
 
-    await page.setContent(html, { waitUntil: 'networkidle0' });
+    const page = await browser.newPage();
 
     if (viewport) {
       await page.setViewport(viewport);
     }
 
-    const screenshotBuffer = await page.screenshot({ type: 'png' });
+    await page.setContent(html, { waitUntil: 'networkidle0' });
+
+    const screenshot = await page.screenshot({ type: 'png' });
 
     await browser.close();
 
     res.set('Content-Type', 'image/png');
-    res.send(screenshotBuffer);
+    res.send(screenshot);
+
   } catch (err) {
-    await browser.close();
-    res.status(500).json({ error: err.message });
+    if (browser) await browser.close();
+    console.error('❌ Error generating screenshot:', err);
+    res.status(500).json({
+      error: 'Internal Server Error',
+      details: err.message,
+      stack: err.stack
+    });
   }
 });
 
